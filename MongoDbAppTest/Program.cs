@@ -12,18 +12,19 @@ namespace MongoDbAppTest
     class Program
     {
         private static readonly Random Random = new Random((int)DateTime.Now.Ticks);
-        private static readonly int MaxNumberOfElements = (int)Math.Pow(10, 4);
+        private static readonly int MaxNumberOfElements = (int)Math.Pow(10, 6);
 
         internal static readonly List<TransactionCode> RandomTransactionCodes =
                     (from r in Enumerable.Range(1, MaxNumberOfElements)
                      select new TransactionCode
                      {
-                         Code = GenerateRandomString(3),
+                         ID = r,
+                         Code = GenerateRandomString(6),
                          CreatedBy = "System",
                          LastUpdatedDateTime = DateTime.Now,
                          CreatedDateTime = DateTime.Now,
                          IsUserOverridden = false,
-                         DutyAbsence = 0
+                         DutyAbsence = Random.Next(0, MaxNumberOfElements)
                      }).ToList();
 
         private static string GenerateRandomString(int size)
@@ -49,7 +50,11 @@ namespace MongoDbAppTest
 
 
             var mongoDbDatabase = new MongoDbDatabase<TransactionCode>();
-            mongoDbDatabase.InitializeWithRandomData(RandomTransactionCodes, "TransactionCode", IndexKeys<TransactionCode>.Ascending(code => code.Code));
+
+            mongoDbDatabase.InitializeWithRandomData(RandomTransactionCodes, "TransactionCode",
+                IndexKeys<TransactionCode>
+                    .Ascending(code => code.Code)
+                    .Ascending(code => code.DutyAbsence));
 
 
             var firstElementInList = RandomTransactionCodes.First();
@@ -58,34 +63,30 @@ namespace MongoDbAppTest
 
             #region [ In-Memory Search ]
 
-            SearchElement(firstElementInList.Code);
-            SearchElement(lastElementInList.Code);
-            SearchElement(middleElementInList.Code);
-            SearchSequence(elem => elem.Code.Contains("AB"));
+            SearchFirstElement(code => code.Code.Equals(firstElementInList.Code) && code.DutyAbsence > 10);
+            SearchFirstElement(code => code.Code.Equals(lastElementInList.Code) && code.DutyAbsence > 10);
+            SearchFirstElement(code => code.Code.Equals(middleElementInList.Code) && code.DutyAbsence > 10);
 
             #endregion
 
             #region [ MongoDb Indexed Search ]
 
-            var tc1 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => firstElementInList.Code.Equals(code.Code));
-            var tc2 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => lastElementInList.Code.Equals(code.Code));
-            var tc3 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => middleElementInList.Code.Equals(code.Code));
-
-
-            var tcCollection = mongoDbDatabase.SearchItem("TransactionCode", code => code.Code.Contains("AB"));
+            var tc1 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => firstElementInList.Code.Equals(code.Code) && code.DutyAbsence > 10);
+            var tc2 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => lastElementInList.Code.Equals(code.Code) && code.DutyAbsence > 10);
+            var tc3 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => middleElementInList.Code.Equals(code.Code) && code.DutyAbsence > 10);
 
             #endregion
 
         }
 
         // Define other methods and classes here
-        static TransactionCode SearchElement(string match)
+        static TransactionCode SearchFirstElement(Func<TransactionCode, bool> searchFunc)
         {
             var stopWatch = new Stopwatch();
 
             stopWatch.Start();
 
-            var found = RandomTransactionCodes.FirstOrDefault(p => p.Code.Equals(match));
+            var found = RandomTransactionCodes.FirstOrDefault(searchFunc);
 
             stopWatch.Stop();
             Console.WriteLine("SearchElement Time  {0}:", stopWatch.ElapsedMilliseconds);

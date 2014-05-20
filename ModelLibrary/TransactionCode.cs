@@ -30,7 +30,7 @@
 
         public DateTime? LastUpdatedDateTime { get; set; }
 
-        public short? DutyAbsence { get; set; }
+        public int DutyAbsence { get; set; }
 
         public TransactionCode()
         {

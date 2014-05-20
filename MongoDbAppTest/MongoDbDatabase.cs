@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
@@ -20,14 +21,14 @@ namespace MongoDbAppTest
 
         internal void InitializeWithRandomData(IEnumerable<T> sampleData, string collectionName, IMongoIndexKeys indexKeys)
         {
-            var collection = _database.GetCollection<T>(collectionName);
+            var collection = _database.GetCollection<T>(collectionName,new MongoCollectionSettings()
+            {
+                AssignIdOnInsert = true
+            });
 
             collection.Drop();
 
-            foreach (var data in sampleData)
-            {
-                collection.Save(data);
-            }
+            collection.InsertBatch(sampleData);
 
             collection.CreateIndex(indexKeys);
             //collection.CreateIndex(new IndexKeysBuilder().Ascending("Code"))
