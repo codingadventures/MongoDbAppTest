@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDbAppTest", "MongoDbAppTest\MongoDbAppTest.csproj", "{B82F0AE5-7B69-4439-9BAC-526C588E0DD0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongoDbConsole", "MongoDbAppTest\MongoDbConsole.csproj", "{B82F0AE5-7B69-4439-9BAC-526C588E0DD0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModelLibrary", "ModelLibrary\ModelLibrary.csproj", "{7B69CE53-1184-4594-A2CC-278951BBBDCB}"
 EndProject
