@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Security.Cryptography;
 using System.Text;
-using ModelLibrary;
-using MongoDB.Bson.Serialization;
+using DataAccess;
+using Entities;
+using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+using MongoDB.Driver.Linq;
 
 namespace MongoDbAppTest
 {
@@ -18,7 +22,6 @@ namespace MongoDbAppTest
                     (from r in Enumerable.Range(1, MaxNumberOfElements)
                      select new TransactionCode
                      {
-                         ID = r,
                          Code = GenerateRandomString(6),
                          CreatedBy = "System",
                          LastUpdatedDateTime = DateTime.Now,
@@ -39,75 +42,77 @@ namespace MongoDbAppTest
             return builder.ToString();
         }
 
+        private static readonly TransactionCodeRepository TransactionCodeRepo = new TransactionCodeRepository();
+
         static void Main(string[] args)
         {
-            if (!BsonClassMap.IsClassMapRegistered(typeof(TransactionCode)))
-                BsonClassMap.RegisterClassMap<TransactionCode>(cm =>
-                {
-                    cm.AutoMap();
-                    cm.SetIdMember(cm.GetMemberMap(c => c.ID));
-                });
-
-
-            var mongoDbDatabase = new MongoDbDatabase<TransactionCode>();
-
-            mongoDbDatabase.InitializeWithRandomData(RandomTransactionCodes, "TransactionCode",
-                IndexKeys<TransactionCode>
-                    .Ascending(code => code.Code)
-                    .Ascending(code => code.DutyAbsence));
-
+            TransactionCodeRepo.InitializeWithRandomData(RandomTransactionCodes,
+               IndexKeys<TransactionCode>
+                   .Ascending(code => code.Code)
+                   .Ascending(code => code.DutyAbsence));
 
             var firstElementInList = RandomTransactionCodes.First();
             var middleElementInList = RandomTransactionCodes.ElementAt(MaxNumberOfElements / 2);
             var lastElementInList = RandomTransactionCodes.Last();
+            var dutyAbsenceValue = Random.Next(0, MaxNumberOfElements / 8);
 
             #region [ In-Memory Search ]
 
-            SearchFirstElement(code => code.Code.Equals(firstElementInList.Code) && code.DutyAbsence > 10);
-            SearchFirstElement(code => code.Code.Equals(lastElementInList.Code) && code.DutyAbsence > 10);
-            SearchFirstElement(code => code.Code.Equals(middleElementInList.Code) && code.DutyAbsence > 10);
+            SearchElementInMemory(code => code.Code.Equals(firstElementInList.Code) && code.DutyAbsence > dutyAbsenceValue);
+            SearchElementInMemory(code => code.Code.Equals(lastElementInList.Code) && code.DutyAbsence > dutyAbsenceValue);
+            SearchElementInMemory(code => code.Code.Equals(middleElementInList.Code) && code.DutyAbsence > dutyAbsenceValue);
 
             #endregion
 
             #region [ MongoDb Indexed Search ]
 
-            var tc1 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => firstElementInList.Code.Equals(code.Code) && code.DutyAbsence > 10);
-            var tc2 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => lastElementInList.Code.Equals(code.Code) && code.DutyAbsence > 10);
-            var tc3 = mongoDbDatabase.SearchFirstItem("TransactionCode", code => middleElementInList.Code.Equals(code.Code) && code.DutyAbsence > 10);
+            SearchElementInDatabase(new List<IMongoQuery> 
+            {
+               Query<TransactionCode>.EQ(code => code.Code,firstElementInList.Code),
+               Query<TransactionCode>.GT(code => code.DutyAbsence,dutyAbsenceValue)
+            });
+            SearchElementInDatabase(new List<IMongoQuery> 
+            {
+               Query<TransactionCode>.EQ(code => code.Code,lastElementInList.Code),
+               Query<TransactionCode>.GT(code => code.DutyAbsence,dutyAbsenceValue)
+            });
+
+            SearchElementInDatabase(new List<IMongoQuery> 
+            {
+               Query<TransactionCode>.EQ(code => code.Code,middleElementInList.Code),
+               Query<TransactionCode>.GT(code => code.DutyAbsence,dutyAbsenceValue)
+            });
 
             #endregion
-
+            Console.WriteLine("Press a key to terminate...");
+            Console.ReadLine();
         }
 
         // Define other methods and classes here
-        static TransactionCode SearchFirstElement(Func<TransactionCode, bool> searchFunc)
+        static void SearchElementInMemory(Func<TransactionCode, bool> searchFunc)
         {
             var stopWatch = new Stopwatch();
 
             stopWatch.Start();
 
-            var found = RandomTransactionCodes.FirstOrDefault(searchFunc);
+            var found = RandomTransactionCodes.Where(searchFunc).ToList();
 
             stopWatch.Stop();
-            Console.WriteLine("SearchElement Time  {0}:", stopWatch.ElapsedMilliseconds);
 
-            return found;
+            Console.WriteLine("SearchElement Time  {0}:", stopWatch.ElapsedMilliseconds);
         }
 
-        static IEnumerable<TransactionCode> SearchSequence(Func<TransactionCode, bool> searchAction)
+        static void SearchElementInDatabase(IEnumerable<IMongoQuery> query)
         {
             var stopWatch = new Stopwatch();
 
             stopWatch.Start();
 
-            var found = RandomTransactionCodes.Where(searchAction).ToList();
+            var found = TransactionCodeRepo.Collection.Find(Query.And(query));
 
             stopWatch.Stop();
 
             Console.WriteLine("SearchSequence Time: {0}", stopWatch.ElapsedMilliseconds);
-
-            return found;
-
         }
     }
 }

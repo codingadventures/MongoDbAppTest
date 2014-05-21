@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>MongoRepository</id>
+    <version>1.6.5</version>
+    <title>MongoRepository</title>
+    <authors>tgeek,  RobIII</authors>
+    <owners>tgeek,  RobIII</owners>
+    <licenseUrl>http://mongorepository.codeplex.com/license</licenseUrl>
+    <projectUrl>http://mongorepository.codeplex.com/</projectUrl>
+    <iconUrl>http://download-codeplex.sec.s-msft.com/Download?ProjectName=mongorepository&amp;DownloadId=334950&amp;Build=19692</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>This easy to use library implements the repository pattern on top of Official MongoDB C# driver.</description>
+    <summary>Provides a repository pattern on top of 10gen's MongoDB C# driver.</summary>
+    <releaseNotes>Updated to MongoCSharp driver 1.9.1.221, added GetById(ObjectId) overload, added CollectionName property (convenience property)</releaseNotes>
+    <language>en-US</language>
+    <tags>mongo mongodb repository</tags>
+    <dependencies>
+      <dependency id="mongocsharpdriver" version="[1.9.1]" />
+    </dependencies>
+  </metadata>
+</package>

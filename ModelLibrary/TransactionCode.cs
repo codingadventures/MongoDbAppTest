@@ -1,12 +1,10 @@
-﻿namespace ModelLibrary
+﻿using System;
+using MongoRepository;
+
+namespace Entities
 {
-    using System;
-
-    public class TransactionCode
-    {
-
-        public int ID { get; set; }
-
+    public class TransactionCode : Entity
+    { 
         public string Code { get; set; }
 
 
@@ -51,5 +49,6 @@
         {
             return string.Format("{0}", Code);
         }
+
     }
 }
